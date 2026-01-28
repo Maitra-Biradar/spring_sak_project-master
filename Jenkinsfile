@@ -24,9 +24,12 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                scp target/*.jar ubuntu@172.31.18.194:/opt/spring-app/app.jar
-                ssh ubuntu@172.31.18.194 "pkill -f app.jar || true"
-                ssh ubuntu@172.31.18.194 "nohup java -jar /opt/spring-app/app.jar > app.log 2>&1 &"
+                scp target/app.jar ubuntu@172.31.18.194:/opt/spring-app/app.jar
+
+                ssh ubuntu@172.31.18.194 "
+                    pkill -f '/opt/spring-app/app.jar' || true
+                    nohup java -jar /opt/spring-app/app.jar > /opt/spring-app/app.log 2>&1 &
+                "
                 '''
             }
         }
