@@ -1,37 +1,34 @@
 pipeline {
     agent any
+
     tools {
         maven 'maven'
+        jdk 'jdk17'
     }
+
     stages {
+
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/Maitra-Biradar/spring_sak_project-master.git'
+            }
+        }
+
         stage('Build') {
             steps {
                 sh 'mvn clean package -DskipTests'
             }
         }
+
         stage('Deploy') {
             steps {
                 sh '''
-                    echo "Stopping existing Spring Boot application if running..."
-                    if pgrep -f spring_app_sak-0.0.1-SNAPSHOT.jar > /dev/null; then
-                        sudo pkill -f spring_app_sak-0.0.1-SNAPSHOT.jar
-                        echo "Application stopped."
-                    else
-                        echo "No existing application running."
-                    fi
-
-                    echo "Starting the Spring Boot application..."
-                    sudo java -jar target/spring_app_sak-0.0.1-SNAPSHOT.jar > /dev/null 2>&1 &
+                scp target/*.jar ubuntu@172.31.18.194:/opt/spring-app/app.jar
+                ssh ubuntu@172.31.18.194 "pkill -f app.jar || true"
+                ssh ubuntu@172.31.18.194 "nohup java -jar /opt/spring-app/app.jar > app.log 2>&1 &"
                 '''
             }
-        }
-    }
-    post {
-        success {
-            echo "Deployed successfully"
-        }
-        failure {
-            echo "Failed to Deploy"
         }
     }
 }
