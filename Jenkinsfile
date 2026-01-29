@@ -35,6 +35,7 @@ pipeline {
         stage('Deploy to Spring Boot Server') {
             steps {
                 sh """
+                ssh ${SERVER_USER}@${SERVER_IP} "mkdir -p ${DEPLOY_DIR}"
                 scp target/*.jar ${SERVER_USER}@${SERVER_IP}:${DEPLOY_DIR}/${APP_NAME}
                 ssh ${SERVER_USER}@${SERVER_IP} "pkill -f ${APP_NAME} || true"
                 ssh ${SERVER_USER}@${SERVER_IP} "nohup java -jar ${DEPLOY_DIR}/${APP_NAME} > ${DEPLOY_DIR}/app.log 2>&1 &"
