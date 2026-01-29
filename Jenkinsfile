@@ -25,8 +25,19 @@ pipeline {
             steps {
                 sh '''
                     mvn clean package -DskipTests
-                    mv target/*.jar target/app.jar
                 '''
+            }
+        }
+
+        stage('Stop Existing App') {
+            steps {
+                sshagent(['spring-ssh-key']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no $SPRING_SERVER "
+                        pkill -f $JAR_NAME || true
+                        "
+                    '''
+                }
             }
         }
 
@@ -35,8 +46,8 @@ pipeline {
                 sshagent(['spring-ssh-key']) {
                     sh '''
                         scp -o StrictHostKeyChecking=no \
-                        target/app.jar \
-                        $SPRING_SERVER:$DEPLOY_DIR/
+                        target/*.jar \
+                        $SPRING_SERVER:$DEPLOY_DIR/$JAR_NAME
                     '''
                 }
             }
@@ -48,11 +59,20 @@ pipeline {
                     sh '''
                         ssh -o StrictHostKeyChecking=no $SPRING_SERVER "
                         cd $DEPLOY_DIR &&
-                        nohup java -jar app.jar > app.log 2>&1 &
+                        nohup java -jar $JAR_NAME > app.log 2>&1 &
                         "
                     '''
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Spring Boot Application Deployed Successfully!"
+        }
+        failure {
+            echo "❌ Deployment Failed. Check Jenkins Logs."
         }
     }
 }
