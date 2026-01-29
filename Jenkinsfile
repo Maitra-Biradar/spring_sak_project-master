@@ -30,18 +30,6 @@ pipeline {
             }
         }
 
-        stage('Stop Existing App') {
-            steps {
-                sshagent(['spring-ssh-key']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no $SPRING_SERVER "
-                        pkill -f app.jar || true
-                        "
-                    '''
-                }
-            }
-        }
-
         stage('Deploy Jar') {
             steps {
                 sshagent(['spring-ssh-key']) {
