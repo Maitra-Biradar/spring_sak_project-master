@@ -7,72 +7,35 @@ pipeline {
     }
 
     environment {
-        SPRING_SERVER = "ubuntu@172.31.16.113"
+        APP_NAME   = "springboot-app.jar"
         DEPLOY_DIR = "/opt/springboot"
-        JAR_NAME = "app.jar"
+        SERVER_USER = "ubuntu"
+        SERVER_IP   = "3.110.141.135"
     }
 
     stages {
 
-        stage('Checkout Code') {
+        stage('Clone Repository') {
             steps {
                 git branch: 'main',
                     url: 'https://github.com/Maitra-Biradar/spring_sak_project-master.git'
             }
         }
 
-        stage('Build Project') {
+        stage('Build with Maven') {
             steps {
-                sh '''
-                    mvn clean package -DskipTests
-                '''
+                sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Stop Existing App') {
+        stage('Deploy to Spring Boot Server') {
             steps {
-                sshagent(['spring-ssh-key']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no $SPRING_SERVER "
-                        pkill -f $JAR_NAME || true
-                        "
-                    '''
-                }
+                sh """
+                scp target/*.jar ${SERVER_USER}@${SERVER_IP}:${DEPLOY_DIR}/${APP_NAME}
+                ssh ${SERVER_USER}@${SERVER_IP} '
+                    pkill -f ${APP_NAME} || true
+                    nohup java -jar ${DEPLOY_DIR}/${APP_NAME} > app.log 2>&1 &
+                '
+                """
             }
         }
-
-        stage('Deploy Jar') {
-            steps {
-                sshagent(['spring-ssh-key']) {
-                    sh '''
-                        scp -o StrictHostKeyChecking=no \
-                        target/*.jar \
-                        $SPRING_SERVER:$DEPLOY_DIR/$JAR_NAME
-                    '''
-                }
-            }
-        }
-
-        stage('Start Application') {
-            steps {
-                sshagent(['spring-ssh-key']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no $SPRING_SERVER "
-                        cd $DEPLOY_DIR &&
-                        nohup java -jar $JAR_NAME > app.log 2>&1 &
-                        "
-                    '''
-                }
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Spring Boot Application Deployed Successfully!"
-        }
-        failure {
-            echo "❌ Deployment Failed. Check Jenkins Logs."
-        }
-    }
-}
