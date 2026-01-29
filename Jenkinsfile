@@ -1,24 +1,28 @@
 pipeline {
     agent any
-
     tools {
         maven 'maven'
         jdk 'jdk17'
     }
-
     environment {
+        JAVA_HOME = "/usr/lib/jvm/java-17-openjdk-amd64"
+        PATH = "${JAVA_HOME}/bin:${env.PATH}"
+
         APP_NAME    = "springboot-app.jar"
-        DEPLOY_DIR = "/opt/springboot"
+        DEPLOY_DIR  = "/opt/springboot"
         SERVER_USER = "ubuntu"
         SERVER_IP   = "3.110.141.135"
     }
 
     stages {
 
-        stage('Clone Repository') {
+        stage('Check Java') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Maitra-Biradar/spring_sak_project-master.git'
+                sh '''
+                echo "JAVA_HOME=$JAVA_HOME"
+                java -version
+                mvn -version
+                '''
             }
         }
 
@@ -41,7 +45,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Spring Boot Application Deployed Successfully'
+            echo '✅ Deployment Successful'
         }
         failure {
             echo '❌ Deployment Failed'
