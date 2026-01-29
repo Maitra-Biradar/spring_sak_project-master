@@ -9,7 +9,7 @@ pipeline {
     environment {
         SPRING_SERVER = "ubuntu@172.31.16.113"
         DEPLOY_DIR = "/opt/springboot"
-        JAR_NAME = "app.jar"
+        JAR_NAME = "spring_sak_project-0.0.1-SNAPSHOT.jar"
     }
 
     stages {
