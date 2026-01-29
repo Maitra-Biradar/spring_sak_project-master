@@ -1,12 +1,13 @@
 pipeline {
     agent any
+
     tools {
         maven 'maven'
         jdk 'jdk17'
     }
 
     environment {
-        APP_NAME   = "springboot-app.jar"
+        APP_NAME    = "springboot-app.jar"
         DEPLOY_DIR = "/opt/springboot"
         SERVER_USER = "ubuntu"
         SERVER_IP   = "3.110.141.135"
@@ -31,10 +32,19 @@ pipeline {
             steps {
                 sh """
                 scp target/*.jar ${SERVER_USER}@${SERVER_IP}:${DEPLOY_DIR}/${APP_NAME}
-                ssh ${SERVER_USER}@${SERVER_IP} '
-                    pkill -f ${APP_NAME} || true
-                    nohup java -jar ${DEPLOY_DIR}/${APP_NAME} > app.log 2>&1 &
-                '
+                ssh ${SERVER_USER}@${SERVER_IP} "pkill -f ${APP_NAME} || true"
+                ssh ${SERVER_USER}@${SERVER_IP} "nohup java -jar ${DEPLOY_DIR}/${APP_NAME} > ${DEPLOY_DIR}/app.log 2>&1 &"
                 """
             }
         }
+    }
+
+    post {
+        success {
+            echo '✅ Spring Boot Application Deployed Successfully'
+        }
+        failure {
+            echo '❌ Deployment Failed'
+        }
+    }
+}
