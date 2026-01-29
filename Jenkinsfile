@@ -9,7 +9,7 @@ pipeline {
     environment {
         SPRING_SERVER = "ubuntu@172.31.16.113"
         DEPLOY_DIR = "/opt/springboot"
-        JAR_NAME = "spring_sak_project-0.0.1-SNAPSHOT.jar"
+        JAR_NAME = "app.jar"
     }
 
     stages {
@@ -25,6 +25,7 @@ pipeline {
             steps {
                 sh '''
                     mvn clean package -DskipTests
+                    mv target/*.jar target/app.jar
                 '''
             }
         }
@@ -34,7 +35,7 @@ pipeline {
                 sshagent(['spring-ssh-key']) {
                     sh '''
                         ssh -o StrictHostKeyChecking=no $SPRING_SERVER "
-                        pkill -f $JAR_NAME || true
+                        pkill -f app.jar || true
                         "
                     '''
                 }
@@ -46,8 +47,8 @@ pipeline {
                 sshagent(['spring-ssh-key']) {
                     sh '''
                         scp -o StrictHostKeyChecking=no \
-                        target/*.jar \
-                        $SPRING_SERVER:$DEPLOY_DIR/$JAR_NAME
+                        target/app.jar \
+                        $SPRING_SERVER:$DEPLOY_DIR/
                     '''
                 }
             }
@@ -59,20 +60,11 @@ pipeline {
                     sh '''
                         ssh -o StrictHostKeyChecking=no $SPRING_SERVER "
                         cd $DEPLOY_DIR &&
-                        nohup java -jar $JAR_NAME > app.log 2>&1 &
+                        nohup java -jar app.jar > app.log 2>&1 &
                         "
                     '''
                 }
             }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Spring Boot Application Deployed Successfully!"
-        }
-        failure {
-            echo "❌ Deployment Failed. Check Jenkins Logs."
         }
     }
 }
